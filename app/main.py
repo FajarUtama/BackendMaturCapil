@@ -23,15 +23,17 @@ logger.info("Database target: %s", get_masked_database_url())
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if not check_database_connection():
-        logger.error(
-            "Tidak dapat terhubung ke MySQL (%s). "
-            "Pastikan DATABASE_URL atau MYSQLHOST/... diset di Railway.",
-            get_masked_database_url(),
-        )
-        raise RuntimeError("Database connection failed — cek konfigurasi DATABASE_URL di Railway.")
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("DATABASE CONNECTED")
+    except Exception as e:
+        import traceback
 
-    Base.metadata.create_all(bind=engine)
+        print("REAL DATABASE ERROR:")
+        print(repr(e))
+        traceback.print_exc()
+        raise
+
     ensure_upload_dir()
     from app.database import SessionLocal
 

@@ -1,4 +1,5 @@
 import os
+import traceback
 from collections.abc import Generator
 
 from sqlalchemy import create_engine, text
@@ -16,10 +17,26 @@ if not DATABASE_URL:
 
 print("DATABASE_URL =", DATABASE_URL)
 
+_connect_args: dict = {}
+if os.getenv("MYSQL_SSL", "").lower() in ("1", "true", "yes"):
+    _connect_args["ssl"] = {"ssl_mode": "REQUIRED"}
+
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
+    pool_recycle=3600,
+    connect_args=_connect_args or {},
 )
+
+try:
+    with engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
+        print("MYSQL CONNECTION SUCCESS")
+except Exception as e:
+    print("MYSQL CONNECTION FAILED")
+    print(repr(e))
+    traceback.print_exc()
+    raise
 
 
 class Base(DeclarativeBase):
@@ -42,5 +59,7 @@ def check_database_connection() -> bool:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         return True
-    except Exception:
+    except Exception as e:
+        print("check_database_connection failed:", repr(e))
+        traceback.print_exc()
         return False
