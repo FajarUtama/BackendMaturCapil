@@ -1,5 +1,7 @@
+import re
 import traceback
 from collections.abc import Generator
+from urllib.parse import urlparse, urlunparse
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -10,6 +12,39 @@ from app.config import mask_database_url, resolve_database_url
 DATABASE_URL = resolve_database_url()
 
 print("DATABASE_URL =", mask_database_url(DATABASE_URL))
+
+
+def _database_name_from_url(url: str) -> str | None:
+    name = urlparse(url).path.lstrip("/").split("?")[0]
+    return name or None
+
+
+def _server_url_without_database(url: str) -> str:
+    return urlunparse(urlparse(url)._replace(path="/"))
+
+
+def ensure_database_exists(url: str) -> None:
+    """Buat database jika belum ada (mis. maturcapil_db di Railway MySQL baru)."""
+    db_name = _database_name_from_url(url)
+    if not db_name or not re.fullmatch(r"[A-Za-z0-9_]+", db_name):
+        return
+
+    server_url = _server_url_without_database(url)
+    admin = create_engine(server_url, isolation_level="AUTOCOMMIT", pool_pre_ping=True)
+    try:
+        with admin.connect() as conn:
+            conn.execute(
+                text(
+                    f"CREATE DATABASE IF NOT EXISTS `{db_name}` "
+                    "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+                )
+            )
+        print(f"DATABASE '{db_name}' READY")
+    finally:
+        admin.dispose()
+
+
+ensure_database_exists(DATABASE_URL)
 
 engine = create_engine(
     DATABASE_URL,

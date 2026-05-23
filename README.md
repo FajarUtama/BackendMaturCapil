@@ -129,7 +129,7 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
      DATABASE_URL=${{NamaServiceMySQL.MYSQL_URL}}
      ```
      (`MYSQL_URL`, **bukan** `MYSQL_PUBLIC_URL` — public proxy sering gagal dari dalam container)
-   - Atau **Add Reference** ke `MYSQL_URL` lalu pastikan nilainya `mysql://...` (bukan `kodama.proxy.rlwy.net` kecuali untuk tools eksternal)
+   - Jangan ubah nama database di URL ke `maturcapil_db` kecuali Anda sudah membuatnya di MySQL. Default Railway: database **`railway`**. Backend otomatis menjalankan `CREATE DATABASE IF NOT EXISTS` untuk nama di `DATABASE_URL` (mis. `maturcapil_db`).
    - Simpan
 5. Tambah variabel lain di service backend:
 
