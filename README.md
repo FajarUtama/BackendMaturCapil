@@ -118,23 +118,41 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ### Langkah
 
 1. Push repo ke GitHub: https://github.com/FajarUtama/BackendMaturCapil
-2. Di [Railway](https://railway.com) → **New Project** → **Deploy from GitHub** → pilih repo ini
-3. Tambah service **MySQL** → Railway akan menyetel variabel `DATABASE_URL` (otomatis dinormalisasi ke `mysql+pymysql://`)
-4. Di service backend, tab **Variables**, tambahkan:
+2. Di [Railway](https://railway.com) → **New Project** → **Deploy from GitHub** → pilih repo backend
+3. **Tambah database MySQL** (wajib — tanpa ini error `Can't connect to MySQL server on 'localhost'`):
+   - Klik **+ New** → **Database** → **MySQL**
+   - Tunggu sampai status MySQL **Active**
+4. **Hubungkan MySQL ke service backend** (ini langkah yang sering terlewat):
+   - Buka service **backend** (bukan MySQL) → tab **Variables**
+   - Klik **+ New Variable** → **Add Reference**
+   - Pilih service **MySQL** → centang **`DATABASE_URL`** (atau semua `MYSQL*`)
+   - Simpan
+5. Tambah variabel lain di service backend:
 
 | Variable | Contoh |
 |----------|--------|
 | `SECRET_KEY` | string acak panjang (wajib production) |
 | `DEBUG` | `false` |
+| `APP_ENV` | `production` |
 | `CORS_ORIGINS` | URL frontend Anda, mis. `https://app.vercel.app` |
 | `PUBLIC_BASE_URL` | URL publik Railway, mis. `https://xxx.up.railway.app` |
 
-5. **Redeploy** setelah env diset
-6. Seed data (sekali), lewat Railway **Shell** atau lokal dengan `DATABASE_URL` production:
+6. **Redeploy** backend setelah variabel disimpan
+7. Cek log deploy — harus ada baris: `Database target: mysql+pymysql://user:****@...` (bukan `localhost`)
+8. Seed data (sekali), lewat Railway **Shell** pada service backend:
 
 ```bash
 python -m scripts.seed
 ```
+
+### Variabel MySQL yang didukung otomatis
+
+Backend membaca (urutan prioritas):
+
+- `DATABASE_URL` / `MYSQL_URL` / `MYSQL_PUBLIC_URL`
+- Atau rakit dari: `MYSQLHOST`, `MYSQLPORT`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`
+
+Semua format `mysql://` otomatis diubah ke `mysql+pymysql://`.
 
 > **Upload file:** di Railway, folder `uploads/` bersifat ephemeral (hilang saat redeploy). Untuk production jangka panjang, rencanakan MinIO/S3.
 

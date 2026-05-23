@@ -10,18 +10,27 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.router import api_router
-from app.config import get_settings
-from app.database import Base, engine
+from app.config import get_masked_database_url, get_settings
+from app.database import Base, check_database_connection, engine
 from app.services.file_service import ensure_upload_dir
 from app.services.permissions import ensure_permissions_exist
 
 settings = get_settings()
 logging.basicConfig(level=logging.DEBUG if settings.debug else logging.INFO)
 logger = logging.getLogger(__name__)
+logger.info("Database target: %s", get_masked_database_url())
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not check_database_connection():
+        logger.error(
+            "Tidak dapat terhubung ke MySQL (%s). "
+            "Pastikan DATABASE_URL atau MYSQLHOST/... diset di Railway.",
+            get_masked_database_url(),
+        )
+        raise RuntimeError("Database connection failed — cek konfigurasi DATABASE_URL di Railway.")
+
     Base.metadata.create_all(bind=engine)
     ensure_upload_dir()
     from app.database import SessionLocal
@@ -85,4 +94,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.get("/health", tags=["Health"])
 def health():
-    return {"status": "ok", "app": settings.app_name}
+    db_ok = check_database_connection()
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "app": settings.app_name,
+        "database": "connected" if db_ok else "disconnected",
+    }
