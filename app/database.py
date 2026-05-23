@@ -1,31 +1,20 @@
-import os
 import traceback
 from collections.abc import Generator
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL") or ""
+from app.config import mask_database_url, resolve_database_url
 
-# Railway kasih mysql://
-# SQLAlchemy PyMySQL butuh mysql+pymysql://
-if DATABASE_URL.startswith("mysql://"):
-    DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
+# Railway MYSQL_URL → mysql:// → mysql+pymysql:// (lihat config.resolve_database_url)
+DATABASE_URL = resolve_database_url()
 
-if not DATABASE_URL:
-    DATABASE_URL = "mysql+pymysql://root@localhost:3306/maturcapil_db?charset=utf8mb4"
-
-print("DATABASE_URL =", DATABASE_URL)
-
-_connect_args: dict = {}
-if os.getenv("MYSQL_SSL", "").lower() in ("1", "true", "yes"):
-    _connect_args["ssl"] = {"ssl_mode": "REQUIRED"}
+print("DATABASE_URL =", mask_database_url(DATABASE_URL))
 
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
     pool_recycle=3600,
-    connect_args=_connect_args or {},
 )
 
 try:

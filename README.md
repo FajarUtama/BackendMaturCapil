@@ -122,10 +122,14 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 3. **Tambah database MySQL** (wajib — tanpa ini error `Can't connect to MySQL server on 'localhost'`):
    - Klik **+ New** → **Database** → **MySQL**
    - Tunggu sampai status MySQL **Active**
-4. **Hubungkan MySQL ke service backend** (ini langkah yang sering terlewat):
-   - Buka service **backend** (bukan MySQL) → tab **Variables**
-   - Klik **+ New Variable** → **Add Reference**
-   - Pilih service **MySQL** → centang **`DATABASE_URL`** (atau semua `MYSQL*`)
+4. **Hubungkan MySQL ke service backend** (pakai URL **internal**, bukan public):
+   - Buka service **backend** → tab **Variables**
+   - Tambah variabel:
+     ```env
+     DATABASE_URL=${{NamaServiceMySQL.MYSQL_URL}}
+     ```
+     (`MYSQL_URL`, **bukan** `MYSQL_PUBLIC_URL` — public proxy sering gagal dari dalam container)
+   - Atau **Add Reference** ke `MYSQL_URL` lalu pastikan nilainya `mysql://...` (bukan `kodama.proxy.rlwy.net` kecuali untuk tools eksternal)
    - Simpan
 5. Tambah variabel lain di service backend:
 
@@ -149,10 +153,13 @@ python -m scripts.seed
 
 Backend membaca (urutan prioritas):
 
-- `DATABASE_URL` / `MYSQL_URL` / `MYSQL_PUBLIC_URL`
+- `DATABASE_URL` (disarankan: reference `MYSQL_URL` dari service MySQL)
+- `MYSQL_URL` (internal Railway)
 - Atau rakit dari: `MYSQLHOST`, `MYSQLPORT`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`
 
-Semua format `mysql://` otomatis diubah ke `mysql+pymysql://`.
+Format `mysql://` dari Railway otomatis diubah ke `mysql+pymysql://`.
+
+`MYSQL_PUBLIC_URL` **tidak** dipakai backend — hanya untuk DBeaver / MySQL Workbench dari laptop Anda.
 
 > **Upload file:** di Railway, folder `uploads/` bersifat ephemeral (hilang saat redeploy). Untuk production jangka panjang, rencanakan MinIO/S3.
 

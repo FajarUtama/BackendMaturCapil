@@ -7,12 +7,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_LOCAL_DATABASE_URL = "mysql+pymysql://root@localhost:3306/maturcapil_db?charset=utf8mb4"
 
-# Env yang dipakai Railway / platform lain untuk MySQL
+# Antar service Railway: MYSQL_URL (internal). Jangan pakai MYSQL_PUBLIC_URL di backend.
 _DATABASE_URL_KEYS = (
     "DATABASE_URL",
     "MYSQL_URL",
-    "MYSQL_PUBLIC_URL",
-    "MYSQLDATABASE_URL",
 )
 
 
@@ -30,9 +28,12 @@ def _is_railway() -> bool:
 def resolve_database_url() -> str:
     """
     Urutan prioritas:
-    1. DATABASE_URL / MYSQL_URL (dari Railway plugin atau manual)
-    2. Rakit dari MYSQLHOST, MYSQLPORT, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE
-    3. Default lokal (development)
+    1. DATABASE_URL (disarankan: reference ${{MySQL.MYSQL_URL}} di Railway)
+    2. MYSQL_URL (internal Railway — bukan MYSQL_PUBLIC_URL)
+    3. Rakit dari MYSQLHOST, MYSQLPORT, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE
+    4. Default lokal (development)
+
+    MYSQL_PUBLIC_URL hanya untuk klien eksternal (DBeaver, laptop), bukan backend.
     """
     for key in _DATABASE_URL_KEYS:
         raw = os.environ.get(key)
@@ -57,7 +58,7 @@ def resolve_database_url() -> str:
     return DEFAULT_LOCAL_DATABASE_URL
 
 
-def _mask_database_url(url: str) -> str:
+def mask_database_url(url: str) -> str:
     """Sembunyikan password di log."""
     if "@" not in url:
         return url
@@ -160,4 +161,4 @@ def get_settings() -> Settings:
 
 
 def get_masked_database_url() -> str:
-    return _mask_database_url(get_settings().database_url)
+    return mask_database_url(get_settings().database_url)
