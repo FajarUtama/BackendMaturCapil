@@ -107,6 +107,41 @@ Jika `SMTP_HOST` kosong di `.env`, kode OTP dicetak ke **log konsol** terminal t
 
 ---
 
+## Deploy ke Railway
+
+Proyek ini sudah menyertakan `railway.json` dan `Procfile` dengan start command:
+
+```text
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+### Langkah
+
+1. Push repo ke GitHub: https://github.com/FajarUtama/BackendMaturCapil
+2. Di [Railway](https://railway.com) → **New Project** → **Deploy from GitHub** → pilih repo ini
+3. Tambah service **MySQL** → Railway akan menyetel variabel `DATABASE_URL` (otomatis dinormalisasi ke `mysql+pymysql://`)
+4. Di service backend, tab **Variables**, tambahkan:
+
+| Variable | Contoh |
+|----------|--------|
+| `SECRET_KEY` | string acak panjang (wajib production) |
+| `DEBUG` | `false` |
+| `CORS_ORIGINS` | URL frontend Anda, mis. `https://app.vercel.app` |
+| `PUBLIC_BASE_URL` | URL publik Railway, mis. `https://xxx.up.railway.app` |
+
+5. **Redeploy** setelah env diset
+6. Seed data (sekali), lewat Railway **Shell** atau lokal dengan `DATABASE_URL` production:
+
+```bash
+python -m scripts.seed
+```
+
+> **Upload file:** di Railway, folder `uploads/` bersifat ephemeral (hilang saat redeploy). Untuk production jangka panjang, rencanakan MinIO/S3.
+
+Referensi: [Railway FastAPI guide](https://docs.railway.com/guides/fastapi), [Railpack Python](https://railpack.com/languages/python).
+
+---
+
 ## Docker (opsional)
 
 File `docker-compose.yml` hanya alternatif jika Anda **tidak** memakai XAMPP. Boleh diabaikan sepenuhnya.

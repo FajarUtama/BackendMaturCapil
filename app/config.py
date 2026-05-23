@@ -1,6 +1,14 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _normalize_database_url(url: str) -> str:
+    """Railway/MySQL plugin sering memberi mysql:// — SQLAlchemy butuh mysql+pymysql://"""
+    if url.startswith("mysql://"):
+        return url.replace("mysql://", "mysql+pymysql://", 1)
+    return url
 
 
 class Settings(BaseSettings):
@@ -10,9 +18,14 @@ class Settings(BaseSettings):
     app_env: str = "development"
     debug: bool = True
     host: str = "0.0.0.0"
-    port: int = 3000
+    port: int = 8000
 
     database_url: str = "mysql+pymysql://root@localhost:3306/maturcapil_db?charset=utf8mb4"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_db_url(cls, v: str) -> str:
+        return _normalize_database_url(v) if isinstance(v, str) else v
 
     secret_key: str = "dev-secret-change-in-production"
     access_token_expire_minutes: int = 60
