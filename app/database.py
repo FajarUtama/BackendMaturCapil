@@ -52,15 +52,18 @@ engine = create_engine(
     pool_recycle=3600,
 )
 
-try:
-    with engine.connect() as conn:
-        conn.execute(text("SELECT 1"))
+
+def verify_database_connection() -> None:
+    """Dipanggil dari lifespan — jangan crash saat import agar uvicorn bisa bind port."""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
         print("MYSQL CONNECTION SUCCESS")
-except Exception as e:
-    print("MYSQL CONNECTION FAILED")
-    print(repr(e))
-    traceback.print_exc()
-    raise
+    except Exception as e:
+        print("MYSQL CONNECTION FAILED")
+        print(repr(e))
+        traceback.print_exc()
+        raise
 
 
 class Base(DeclarativeBase):

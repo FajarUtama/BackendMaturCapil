@@ -112,7 +112,7 @@ Jika `SMTP_HOST` kosong di `.env`, kode OTP dicetak ke **log konsol** terminal t
 Proyek ini sudah menyertakan `railway.json` dan `Procfile` dengan start command:
 
 ```text
-uvicorn app.main:app --host 0.0.0.0 --port $PORT
+python start_railway.py
 ```
 
 ### Langkah
@@ -140,6 +140,15 @@ uvicorn app.main:app --host 0.0.0.0 --port $PORT
 | `APP_ENV` | `production` |
 | `CORS_ORIGINS` | URL frontend Anda, mis. `https://app.vercel.app` |
 | `PUBLIC_BASE_URL` | URL publik Railway, mis. `https://xxx.up.railway.app` |
+
+**Port (penting — 502 connection refused):**
+
+| Variable | Di Railway |
+|----------|------------|
+| `PORT` | **Jangan set manual** (jangan `3000` / `8000` dari `.env` lokal). Railway inject otomatis; app pakai `start_railway.py`. |
+| `HOST` | Opsional / boleh dihapus — uvicorn selalu `0.0.0.0`. |
+
+Di log deploy harus ada: `Starting uvicorn on 0.0.0.0:XXXX (PORT env='XXXX')` — angka itu harus sama dengan **Networking → Port** di service backend (biasanya biarkan **Auto**).
 
 6. **Redeploy** backend setelah variabel disimpan
 7. Cek log deploy — harus ada baris: `Database target: mysql+pymysql://user:****@...` (bukan `localhost`)

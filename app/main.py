@@ -11,7 +11,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.router import api_router
 from app.config import get_masked_database_url, get_settings
-from app.database import Base, check_database_connection, engine
+from app.database import Base, check_database_connection, engine, verify_database_connection
 from app.services.file_service import ensure_upload_dir
 from app.services.permissions import ensure_permissions_exist
 
@@ -23,6 +23,7 @@ logger.info("Database target: %s", get_masked_database_url())
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    verify_database_connection()
     try:
         Base.metadata.create_all(bind=engine)
         print("DATABASE CONNECTED")
