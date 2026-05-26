@@ -107,9 +107,20 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     upload_dir: str = "uploads"
-    max_upload_mb: int = 5
+    max_upload_mb: int = 2
+    max_upload_input_mb: int = 15
     max_complaint_photos: int = 3
     public_base_url: str = "http://localhost:3000"
+
+    @field_validator("public_base_url", mode="before")
+    @classmethod
+    def normalize_public_base_url(cls, v: str) -> str:
+        if not isinstance(v, str):
+            return v
+        v = v.strip().rstrip("/")
+        if v and not v.startswith(("http://", "https://")):
+            v = f"https://{v}"
+        return v
 
     smtp_host: str = ""
     smtp_port: int = 587
@@ -132,6 +143,10 @@ class Settings(BaseSettings):
     @property
     def max_upload_bytes(self) -> int:
         return self.max_upload_mb * 1024 * 1024
+
+    @property
+    def max_upload_input_bytes(self) -> int:
+        return self.max_upload_input_mb * 1024 * 1024
 
     @property
     def is_production(self) -> bool:

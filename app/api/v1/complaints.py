@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.config import get_settings
 from app.core.constants import ADMIN_ROLES, CITIZEN_ROLE, COMPLAINT_STATUSES, PRIORITIES
 from app.core.deps import get_client_ip, get_current_user, require_permission
-from app.core.responses import raise_api_error, success_response
+from app.core.responses import error_response, raise_api_error, success_response
 from app.database import get_db
 from app.models.complaint import Complaint, ComplaintFile, ComplaintStatusLog
 from app.models.user import User
@@ -16,7 +16,7 @@ from app.services.complaint_service import (
     generate_ticket_number,
     serialize_complaint,
 )
-from app.services.file_service import public_url, save_complaint_image
+from app.services.file_service import relative_path_from_public_url, save_complaint_image
 from app.services.permissions import user_has_permission
 from app.utils.datetime_utils import to_iso, utcnow
 from app.utils.ids import new_id
@@ -200,8 +200,8 @@ async def create_complaint(
         )
 
     for url in photos_urls:
-        if isinstance(url, str) and url.startswith("http"):
-            rel = url.split("/uploads/")[-1] if "/uploads/" in url else url
+        if isinstance(url, str) and url.strip():
+            rel = relative_path_from_public_url(url)
             db.add(
                 ComplaintFile(
                     id=new_id("cf"),
@@ -318,8 +318,8 @@ async def close_complaint(
         raise_api_error("Catatan penyelesaian wajib diisi.", 400)
 
     for url in evidence_urls or []:
-        if isinstance(url, str):
-            rel = url.split("/uploads/")[-1] if "/uploads/" in url else url
+        if isinstance(url, str) and url.strip():
+            rel = relative_path_from_public_url(url)
             db.add(
                 ComplaintFile(
                     id=new_id("cf"),

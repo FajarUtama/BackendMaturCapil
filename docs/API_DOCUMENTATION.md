@@ -120,15 +120,44 @@ Digunakan pada list `complaints`, `users`, `audit-logs`:
 
 Format ISO 8601 UTC dengan suffix `Z`, contoh: `2026-05-23T10:00:00Z`.
 
-### 1.6 URL file upload
+### 1.6 Upload file (BE handle)
 
-Foto disimpan lokal dan diakses via:
+**Alur disarankan untuk FE:**
+
+1. `POST /api/v1/uploads` — kirim file utuh (`multipart/form-data`, field `file`)
+2. BE kompresi gambar hingga ≤ **2 MB**, simpan di disk, response berisi **`url`**
+3. Saat buat/tutup laporan (`POST /complaints` JSON), kirim array URL di `photos` / `evidence_after_photos`
+
+| Endpoint | Keterangan |
+|----------|------------|
+| `POST /api/v1/uploads` | Satu file, query `folder`: `complaints` \| `evidence_after` \| `documents` |
+| `POST /api/v1/uploads/batch` | Beberapa file (maks 3), field `files` |
+
+**Response upload (201):**
+
+```json
+{
+  "success": true,
+  "message": "File berhasil diunggah.",
+  "data": {
+    "url": "https://backend.../uploads/complaints/abc123.jpg",
+    "path": "complaints/abc123.jpg",
+    "filename": "abc123.jpg",
+    "size_bytes": 184320,
+    "content_type": "image/jpeg",
+    "original_size_bytes": 4500000,
+    "compressed": true
+  }
+}
+```
+
+File diakses publik via:
 
 ```text
 {PUBLIC_BASE_URL}/uploads/{path_relatif}
 ```
 
-Contoh dev: `http://localhost:3000/uploads/complaints/a1b2c3d4.jpg`
+Format: gambar JPG/PNG/WebP (dikompresi BE), dokumen PDF (maks 2 MB, tanpa kompresi). Input mentah FE boleh besar (default maks 15 MB sebelum diproses).
 
 ### 1.7 Validasi bisnis (server)
 
@@ -137,7 +166,7 @@ Contoh dev: `http://localhost:3000/uploads/complaints/a1b2c3d4.jpg`
 | **NIK** | 16 digit angka, unik |
 | **Password** | Min 8 karakter, ≥1 huruf besar, ≥1 angka |
 | **OTP** | 6 digit, expired **5 menit**, max kirim ulang **3x**, cooldown **60 detik** |
-| **Foto laporan** | Maks **3** file, maks **5 MB**/file, JPG / PNG / WebP |
+| **Foto laporan** | Maks **3** file; simpanan BE maks **2 MB**/file (gambar dikompresi), JPG / PNG / WebP / PDF |
 | **Lokasi** | Koordinat harus di bounding box **Kota Semarang** |
 | **Email belum verifikasi** | Maks **1** laporan aktif per warga |
 | **Login gagal** | Maks **5** percobaan / **15 menit** per email |

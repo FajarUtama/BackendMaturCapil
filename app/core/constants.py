@@ -29,3 +29,8 @@ SEMARANG_LNG_MAX = 110.55
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp"}
+
+ALLOWED_DOCUMENT_TYPES = {"application/pdf"}
+ALLOWED_DOCUMENT_EXT = {".pdf"}
+
+UPLOAD_FOLDERS = frozenset({"complaints", "evidence_after", "documents"})
