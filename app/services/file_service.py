@@ -58,8 +58,8 @@ def _is_document(content_type: str | None, ext: str) -> bool:
 def _compress_image_to_max_bytes(raw: bytes, max_bytes: int) -> bytes:
     try:
         img = Image.open(io.BytesIO(raw))
-    except Exception as exc:
-        raise_api_error("File gambar tidak valid atau rusak.", 400) from exc
+    except Exception:
+        raise_api_error("File gambar tidak valid atau rusak.", 400)
 
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
